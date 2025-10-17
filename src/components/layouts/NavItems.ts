@@ -1,0 +1,51 @@
+export const navItems = [
+  {
+    id: 2733,
+    name: "Home",
+    path: "/",
+    sequence: "10",
+    icon: "fa-solid fa-house",
+    subMenus: [],
+  },
+  {
+    id: 2734,
+    name: "SCE Workflow",
+    path: "/SCEWorkflows",
+    sequence: "100",
+    icon: "fa-solid fa-sheet-plastic",
+    subMenus: [
+      {
+        id: 2746,
+        name: "Initialize",
+        path: "/sce-workflows/initial-workflow",
+        sequence: "110",
+        icon: "fa-solid fa-plus",
+        subMenus: [],
+      },
+      {
+        id: 2735,
+        name: "My Task",
+        path: "/sce-workflows/my-task",
+        sequence: "120",
+        icon: "fas fa-list",
+        subMenus: [],
+      },
+      {
+        id: 2730,
+        name: "User Settings",
+        path: "/sce-workflows/user-management",
+        sequence: "120",
+        icon: "fas fa-list",
+        subMenus: [],
+      },
+      {
+        id: 2732,
+        name: "Commodity Settings",
+        path: "/sce-workflows/commodity-management",
+        sequence: "120",
+        icon: "fas fa-list",
+        subMenus: [],
+      },
+    ],
+  },
+];

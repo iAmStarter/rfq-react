@@ -1,0 +1,10 @@
+/* In your main CSS file */
+.swal2-container {
+  z-index: 9999 !important;
+}
+.swal2-modal {
+  z-index: 10000 !important;
+}
+.swal2-backdrop-show {
+  z-index: 9998 !important;
+}
