@@ -1,8 +1,8 @@
-// src/components/ProtectedRoute.tsx
+// src/routes/ProtectedRoute.tsx
 import { useDispatch, useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
-import type { RootState } from '../../store';
-import { logout } from '../../store/authSlice';
+import type { RootState } from '../store';
+import { logout } from '../store/authSlice';
 interface ProtectedRouteProps {
   redirectPath?: string;
 }

@@ -43,7 +43,7 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import { logout } from "../../store/authSlice";
 import { navItems } from "./NavItems";
 import { toggleMode } from "../../store/themeSlice";
-import { Alert } from "../../helpers/AlertComponent";
+import { Alert } from "../../utils/AlertComponent";
 
 import NotificationMenu from "../notifications/Notification";
 

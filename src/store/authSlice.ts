@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // src/store/authSlice.ts
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { fetchLogin, fetchUserProfile } from "../api/auth";
+import { fetchLogin, fetchUserProfile } from "../services/auth";
 import type { User, UserLogin } from "../types";
 interface AuthState {
   isAuthenticated: boolean;
