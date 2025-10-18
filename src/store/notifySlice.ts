@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import type { Notification } from "../types";
-import { fetchNotifications } from "../api/auth/notify";
+import { fetchNotifications } from "../services/auth/notify";
 interface NotifyState {
   loading: boolean;
   error: string | null;

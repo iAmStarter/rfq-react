@@ -6,7 +6,7 @@ import App from './App';
 import './index.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { store, useAppSelector } from './store';
-import { buildTheme } from './theme';
+import { buildTheme } from './styles/theme';
 function ThemedApp() {
   const mode = useAppSelector(s => s.theme.mode);
   const theme = React.useMemo(() => buildTheme(mode), [mode]);
