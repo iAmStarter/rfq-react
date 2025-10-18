@@ -1,14 +1,14 @@
 // Updated router configuration
 import { createBrowserRouter } from "react-router-dom";
-import ProtectedRoute from "../routes/ProtectedRoute";
-import Layout from "../layouts/Layout";
-import { LoginPage } from "../../pages/LoginPage";
-import HomePage from "../../pages/HomePage";
-import { NotFoundPage } from "../../pages/NotFoundPage"; // Adjust path as needed
-import InitialWorkFlow from "../../features/SCEWorkflows/InitialWorkFlow";
-import MyTask from "../../features/SCEWorkflows/MyTask";
-import { UserManagementPage } from "../../pages/UserManagementPage";
-import { CommodityManagementPage } from "../../pages/CommodityManagementPage";
+import ProtectedRoute from "./ProtectedRoute";
+import Layout from "../components/layouts/Layout";
+import { LoginPage } from "../pages/LoginPage";
+import HomePage from "../pages/HomePage";
+import { NotFoundPage } from "../pages/NotFoundPage";
+import InitialWorkFlow from "../features/SCEWorkflows/InitialWorkFlow";
+import MyTask from "../features/SCEWorkflows/MyTask";
+import { UserManagementPage } from "../pages/UserManagementPage";
+import { CommodityManagementPage } from "../pages/CommodityManagementPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
