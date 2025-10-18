@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -8,17 +8,19 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
+import { useForm, Controller } from "react-hook-form";
 import { loginAsync, clearError } from "../../store/authSlice";
 import type { RootState, AppDispatch } from "../../store";
 import CustomTextField from "../common/CustomTextField";
+
 type LocationState = { from?: { pathname: string } } | null;
 
-const Login: React.FC = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+type FormValues = {
+  username: string;
+  password: string;
+};
 
-  const [usernameError, setUsernameError] = useState(false);
-  const [passwordError, setPasswordError] = useState(false);
+const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,53 +28,32 @@ const Login: React.FC = () => {
     (state: RootState) => state.auth
   );
 
-  useEffect(() => {
+  const {
+    control,
+    handleSubmit,
+    setError: setFormError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<FormValues>({
+    defaultValues: { username: "", password: "" },
+    mode: "onSubmit",
+    reValidateMode: "onChange",
+  });
+
+  React.useEffect(() => {
     dispatch(clearError());
   }, [dispatch]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isAuthenticated) {
       const from = (location.state as LocationState)?.from?.pathname || "/";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location.state]);
 
-
-
-  const handleUsernameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setUsername(e.target.value);
-      if (usernameError) setUsernameError(false);
-      if (error) dispatch(clearError()); 
-    },
-    [usernameError, error, dispatch]
-  );
-
-  const handlePasswordChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPassword(e.target.value);
-      if (passwordError) setPasswordError(false);
-      if (error) dispatch(clearError());
-    },
-    [passwordError, error, dispatch]
-  );
-
-  const validate = useCallback(() => {
-    const uErr = username.trim() === "";
-    const pErr = password.length < 6;
-    setUsernameError(uErr);
-    setPasswordError(pErr);
-    return !(uErr || pErr);
-  }, [username, password]);
-
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!validate()) return;
-      await dispatch(loginAsync({ username: username.trim(), password }));
-    },
-    [dispatch, username, password, validate]
-  );
+  const onSubmit = async (data: FormValues) => {
+    await dispatch(loginAsync({ username: data.username.trim(), password: data.password }));
+  };
 
   return (
     <Box
@@ -87,7 +68,7 @@ const Login: React.FC = () => {
     >
       <Box
         component="form"
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onSubmit)}
         noValidate
         sx={{
           display: "flex",
@@ -106,31 +87,77 @@ const Login: React.FC = () => {
         <Typography variant="h5" align="center" gutterBottom>
           Login
         </Typography>
+
         {error && (
           <Alert severity="error" onClose={() => dispatch(clearError())}>
             {error}
           </Alert>
         )}
-        <CustomTextField 
-          value={username}
-          handleChange={handleUsernameChange}
-          error={usernameError}
-          setError={setUsernameError}
-          loading={loading}
-          helperText={usernameError ? "Please enter your username" : " "}
-          autoComplete="username"
-          label="Username"
+
+        <Controller
+          name="username"
+          control={control}
+          rules={{ required: "Please enter your username" }}
+          render={({ field }) => (
+            <CustomTextField
+              value={field.value}
+              handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                dispatch(clearError());
+                field.onChange(e);
+                if (errors.username) clearErrors("username");
+              }}
+              error={!!errors.username}
+              setError={(v: boolean) =>
+                v
+                  ? setFormError("username", {
+                      type: "manual",
+                      message: "Please enter your username",
+                    })
+                  : clearErrors("username")
+              }
+              loading={loading}
+              helperText={errors.username?.message || " "}
+              autoComplete="username"
+              label="Username"
+              name="username"
+              required
+            />
+          )}
         />
-        <CustomTextField 
-          value={password}
-          handleChange={handlePasswordChange}
-          error={passwordError}
-          setError={setPasswordError}
-          loading={loading}
-          helperText={passwordError ? "Please enter your password" : " "}
-          autoComplete="current-password"
-          label="Password"
-          isPassword
+
+        <Controller
+          name="password"
+          control={control}
+          rules={{
+            required: "Please enter your password",
+            minLength: { value: 6, message: "Password must be at least 6 characters" },
+          }}
+          render={({ field }) => (
+            <CustomTextField
+              value={field.value}
+              handleChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                dispatch(clearError());
+                field.onChange(e);
+                if (errors.password) clearErrors("password");
+              }}
+              error={!!errors.password}
+              setError={(v: boolean) =>
+                v
+                  ? setFormError("password", {
+                      type: "manual",
+                      message: "Please enter your password",
+                    })
+                  : clearErrors("password")
+              }
+              loading={loading}
+              helperText={errors.password?.message || " "}
+              autoComplete="current-password"
+              label="Password"
+              isPassword
+              name="password"
+              required
+            />
+          )}
         />
 
         <Button
@@ -147,4 +174,5 @@ const Login: React.FC = () => {
     </Box>
   );
 };
+
 export default Login;
