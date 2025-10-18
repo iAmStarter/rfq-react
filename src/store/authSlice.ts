@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // src/store/authSlice.ts
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { fetchLogin, fetchUserProfile } from "../api/auth";
@@ -8,6 +10,7 @@ interface AuthState {
   error: string | null;
   data:User | null;
 }
+
 const loadInitialState = async (): Promise<User | null> => {
   try {
     return await fetchUserProfile();

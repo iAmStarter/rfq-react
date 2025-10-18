@@ -3,8 +3,10 @@ import CustomDataGrid from "../../components/common/CustomDataGrid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useAppDispatch } from "../../store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { setPageTitle } from "../../store/appSlice";
+import { Button, Modal, Popover } from "@mui/material";
+import UserCreate from "./UserCreate";
 
 const columns: GridColDef<(typeof rows)[number]>[] = [
   { field: "id", headerName: "ID", width: 90 },
@@ -53,7 +55,8 @@ const columns: GridColDef<(typeof rows)[number]>[] = [
       <GridActionsCellItem
         icon={<DeleteIcon />}
         label="Delete"
-        color="error"
+        color="inherit"
+        sx={{ color: 'inherit' }}
         onClick={() => console.log(params.row.firstName)}
       />,
     ],
@@ -82,13 +85,22 @@ const rows = [
   { id: 19, lastName: "Roxie", firstName: "Harvey", age: 65 },
 ];
 
-const UserManagement = () => {
-   const dispatch = useAppDispatch();
-      useEffect(() => {
-          dispatch(setPageTitle("User Management"));
-      }, []);
-      
-  return <CustomDataGrid rows={rows} columns={columns} />;
+const UserList = () => {
+  const [createOpen, setCreateOpen] = useState(false);
+  const dispatch = useAppDispatch();
+
+
+  return (
+    <>
+      <Button variant="contained" color="primary" sx={{ mb: 2 }} onClick={() => setCreateOpen(true)}>
+        Add New User
+      </Button>
+      <CustomDataGrid rows={rows} columns={columns} checkboxSelection />
+      <Modal open={createOpen} onClose={() => setCreateOpen(false)}>
+        <UserCreate open={createOpen} onClose={() => setCreateOpen(false)} />
+      </Modal>
+    </>
+  );
 };
 
-export default UserManagement;
+export default UserList;

@@ -3,19 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
-  TextField,
   Button,
-  FormControl,
-  InputLabel,
-  OutlinedInput,
-  InputAdornment,
-  IconButton,
   Alert,
   Typography,
   CircularProgress,
-  FormHelperText,
 } from "@mui/material";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { loginAsync, clearError } from "../../store/authSlice";
 import type { RootState, AppDispatch } from "../../store";
 import CustomTextField from "../common/CustomTextField";
@@ -135,7 +127,7 @@ const Login: React.FC = () => {
           error={passwordError}
           setError={setPasswordError}
           loading={loading}
-          helperText={passwordError}
+          helperText={passwordError ? "Please enter your password" : " "}
           autoComplete="current-password"
           label="Password"
           isPassword

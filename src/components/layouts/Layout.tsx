@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Link,
   NavLink,
@@ -26,11 +27,9 @@ import {
   Tooltip,
   Popover,
   useTheme,
-  Badge,
 } from "@mui/material";
 import MenuRounded from "@mui/icons-material/MenuRounded";
 import LogoutRounded from "@mui/icons-material/LogoutRounded";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import {
   DarkModeRounded,
   Email,
@@ -46,23 +45,25 @@ import { navItems } from "./NavItems";
 import { toggleMode } from "../../store/themeSlice";
 import { Alert } from "../../helpers/AlertComponent";
 
+import NotificationMenu from "../notifications/Notification";
+
 const drawerWidth = 250;
 const miniWidth = 80;
 
 export default function Layout() {
   const theme = useTheme();
 
-  // Mobile drawer toggle
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const openTimers = React.useRef<Record<string, number>>({});
+  const closeTimers = React.useRef<Record<string, number>>({});
 
-  // User menu
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  // Mini-rail toggle (persisted)
   const [isMini, setIsMini] = useState<boolean>(() => {
     const saved = localStorage.getItem("layout:isMini");
     return saved ? saved === "1" : false;
   });
+
   useEffect(() => {
     localStorage.setItem("layout:isMini", isMini ? "1" : "0");
   }, [isMini]);
@@ -71,11 +72,11 @@ export default function Layout() {
 
   const user = useAppSelector((s) => s.auth.data);
   const mode = useAppSelector((s) => s.theme.mode);
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Open states for expanded drawer (non-mini)
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
     () => {
       const init: Record<string, boolean> = {};
@@ -99,21 +100,22 @@ export default function Layout() {
     }
   );
 
-  // ---------- Mini-mode popover management (CLICK ONLY) ----------
   const [miniAnchors, setMiniAnchors] = useState<Record<string, HTMLElement | null>>({});
   const [currentOpenPath, setCurrentOpenPath] = useState<string | null>(null);
-  const openTimers = useRef<Record<string, number>>({});
-  const closeTimers = useRef<Record<string, number>>({});
 
-  const clearTimer = (map: React.MutableRefObject<Record<string, number>>, key: string) => {
+
+
+
+
+
+  const clearTimer = useCallback((map: React.MutableRefObject<Record<string, number>>, key: string) => {
     if (map.current[key]) {
       window.clearTimeout(map.current[key]);
       delete map.current[key];
     }
-  };
+  }, []);
 
-  const scheduleOpen = (path: string, el: HTMLElement, delay = 0) => {
-    // Only click/keyboard uses this; delay kept for parity and easy tuning
+  const scheduleOpen = useCallback((path: string, el: HTMLElement, delay = 0) => {
     clearTimer(closeTimers, path);
     if (currentOpenPath && currentOpenPath !== path) {
       setMiniAnchors((prev) => ({ ...prev, [currentOpenPath]: null }));
@@ -123,18 +125,17 @@ export default function Layout() {
       setMiniAnchors((prev) => ({ ...prev, [path]: el }));
       setCurrentOpenPath(path);
     }, delay);
-  };
+  }, [clearTimer, currentOpenPath]);
 
-  const scheduleClose = (path: string, delay = 0) => {
+  const scheduleClose = useCallback((path: string, delay = 0) => {
     clearTimer(openTimers, path);
     clearTimer(closeTimers, path);
     closeTimers.current[path] = window.setTimeout(() => {
       setMiniAnchors((prev) => ({ ...prev, [path]: null }));
       if (currentOpenPath === path) setCurrentOpenPath(null);
     }, delay);
-  };
+  }, [clearTimer, currentOpenPath]);
 
-  // Close all popovers and recompute which sections should be open on route change
   useEffect(() => {
     const updated: Record<string, boolean> = {};
     for (const item of navItems) {
@@ -155,32 +156,17 @@ export default function Layout() {
     }
     setOpenSubmenus(updated);
 
-    // close mini popovers on route change
     setMiniAnchors({});
     setCurrentOpenPath(null);
     Object.keys(openTimers.current).forEach((k) => clearTimer(openTimers, k));
     Object.keys(closeTimers.current).forEach((k) => clearTimer(closeTimers, k));
-  }, [location.pathname]);
+  }, [location.pathname, clearTimer]);
 
-  // ---------------------------------------------------------------
-
-  const isSubItemActive = (subItems: any[]) => {
-    if (!subItems || !Array.isArray(subItems)) return false;
-    return subItems.some((subItem) => {
-      const target = subItem?.to || subItem?.path;
-      if (!target || typeof target !== "string") return false;
-      return (
-        location.pathname === target ||
-        location.pathname.startsWith(target + "/")
-      );
-    });
-  };
-
-  const toggleSubmenu = (path: string) => {
+  const toggleSubmenu = useCallback((path: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [path]: !prev[path] }));
-  };
+  }, []);
 
-  const renderIcon = (icon: React.ElementType | string | undefined) => {
+  const renderIcon = useCallback((icon: React.ElementType | string | undefined) => {
     if (!icon) return null;
     if (typeof icon === "function" || typeof icon === "object") {
       const IconComponent = icon as React.ElementType;
@@ -190,17 +176,17 @@ export default function Layout() {
       return <i className={icon} style={{ width: 24, textAlign: "center" }} />;
     }
     return null;
-  };
+  }, []);
 
-  const signout = async () => {
+  const signout = useCallback(async () => {
     const result = await Alert.confirm("Are you sure to logout?");
     if (result.isConfirmed) {
       await dispatch(logout());
       navigate("/login");
     }
-  };
+  }, [dispatch, navigate]);
 
-  const drawerHeader = (
+  const drawerHeader = useMemo(() => (
     <Box
       sx={{
         p: 2,
@@ -216,7 +202,7 @@ export default function Layout() {
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: "center", // ensures centered text
+          justifyContent: "center",
           flexGrow: 1,
           textAlign: "center",
         }}
@@ -231,9 +217,9 @@ export default function Layout() {
             transition: theme.transitions.create(["opacity", "width"], {
               duration: theme.transitions.duration.shorter,
             }),
-            background: "linear-gradient(90deg, #5ca581ff 0%, #7f9cb8ff 100%)", // pastel gradient fill
+            background: "linear-gradient(90deg, #5ca581ff 0%, #7f9cb8ff 100%)",
             WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent", // makes text gradient-filled
+            WebkitTextFillColor: "transparent",
             letterSpacing: 1,
           }}
         >
@@ -251,22 +237,18 @@ export default function Layout() {
           </Link>
         </Typography>
       </Box>
-
-
     </Box>
-  );
+  ), [isMini, theme.transitions]);
 
-  const drawerList = (
+  const drawerList = useMemo(() => (
     <List sx={{ py: 1 }}>
       {navItems.map((item) => {
         const hasSubs = Array.isArray(item.subMenus) && item.subMenus.length > 0;
         const isMainItemActive =
-          location.pathname === item.path ||
-          (hasSubs && isSubItemActive(item.subMenus));
+          location.pathname === item.path;
 
         const pathKey = item.path;
 
-        // CLICK ONLY: open/close popover in mini mode
         const onMiniClick = (e: React.MouseEvent<HTMLDivElement | HTMLAnchorElement>) => {
           if (isMini && hasSubs) {
             e.preventDefault();
@@ -278,6 +260,7 @@ export default function Layout() {
             }
           }
         };
+
         const onMiniKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
           if (!isMini || !hasSubs) return;
           if (e.key === "Enter" || e.key === " ") {
@@ -294,7 +277,7 @@ export default function Layout() {
           <ListItemButton
             component={hasSubs ? "div" : NavLink}
             to={hasSubs ? undefined : item.path}
-            onClick={(e) => {
+            onClick={(e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement, MouseEvent>) => {
               if (hasSubs) {
                 if (isMini) onMiniClick(e);
                 else {
@@ -306,7 +289,7 @@ export default function Layout() {
               }
             }}
             onKeyDown={onMiniKeyDown}
-            selected={isMainItemActive}
+            selected={!!isMainItemActive}
             sx={{
               mx: 1.5,
               my: 0.5,
@@ -351,22 +334,20 @@ export default function Layout() {
           <div key={pathKey}>
             {isMini ? (
               <Tooltip title={item.name} placement="right">
-                {/* Make wrapper full-width so centering is exact */}
                 <div style={{ width: "100%" }}>
                   <ListItemButton
                     component={hasSubs ? "div" : NavLink}
                     to={hasSubs ? undefined : item.path}
-                    selected={isMainItemActive}
-                    onClick={(e) => {
+                    selected={!!isMainItemActive}
+                    onClick={(e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement, MouseEvent>) => {
                       if (hasSubs) onMiniClick(e);
                       else setMobileOpen(false);
                     }}
                     sx={{
-                      // center the item inside the 80px rail
-                      mx: 1,                 // small side margins for pleasant spacing
+                      mx: 1,
                       my: 0.5,
-                      px: 0,                 // remove horizontal padding
-                      height: 44,           // fixed hit target
+                      px: 0,
+                      height: 44,
                       borderRadius: 1.5,
                       justifyContent: "center",
                       alignItems: "center",
@@ -374,7 +355,6 @@ export default function Layout() {
                   >
                     <ListItemIcon
                       sx={{
-                        // hard-center the icon
                         minWidth: 0,
                         m: 0,
                         width: 40,
@@ -393,62 +373,36 @@ export default function Layout() {
               itemButton
             )}
 
-
-            {/* Expanded nested list when NOT mini */}
             {!isMini && hasSubs && (
               <Collapse in={openSubmenus[pathKey]} timeout="auto" unmountOnExit>
-                {/* Rail wrapper */}
-                <Box sx={{ position: "relative", pl: 2 /* keep your indent */ }}>
-                  {/* Vertical rail */}
+                <Box sx={{ position: "relative", pl: 2 }}>
                   <Box
                     sx={(t) => ({
                       position: "absolute",
-                      left: 26,               // align with child indent (tweak if needed)
+                      left: 26,
                       top: -10,
                       bottom: 6,
                       width: 2,
                       bgcolor: t.palette.mode === "light" ? t.palette.divider : t.palette.action.hover,
-                      borderRadius: 999,      // rounded caps
+                      borderRadius: 999,
                       pointerEvents: "none",
                     })}
                   />
                   <List component="div" disablePadding sx={{ pr: 0.5 }}>
-                    {item.subMenus.map((subItem: any, idx: number) => (
+                    {item.subMenus.map((subItem: any) => (
                       <ListItemButton
                         key={subItem.path}
                         component={NavLink}
                         to={subItem.path}
                         onClick={() => setMobileOpen(false)}
                         sx={(t) => ({
-                          // spacing & shape
-                          // mx: 1.5,
-                          // mr: 2,
                           height: 35,
                           borderRadius: 12,
                           borderTopLeftRadius: 0,
                           borderBottomLeftRadius: 0,
                           borderTopRightRadius: 24,
                           borderBottomRightRadius: 24,
-                          // pl: 4.5, // indent so text clears the rail + dot
                           minHeight: 40,
-
-                          // draw a small connector dot on the rail
-                          // position: "relative",
-                          // "&::before": {
-                          //   content: '""',
-                          //   position: "absolute",
-                          //   left: 1,           // center of the rail (left + rail width/2)
-                          //   top: "50%",
-                          //   transform: "translate(-50%, -50%)",
-                          //   width: 10,
-                          //   height: 10,
-                          //   borderRadius: "50%",
-                          //   backgroundColor: t.palette.mode === "light"
-                          //     ? "#CFE7DB"
-                          //     : "#2C4437"
-                          // },
-
-                          // selected state: tint the dot and give subtle bg
                           "&.Mui-selected::before": {
                             backgroundColor: t.palette.primary.main,
                           },
@@ -469,16 +423,14 @@ export default function Layout() {
                   </List>
                 </Box>
               </Collapse>
-
             )}
 
-            {/* Mini-mode submenu popover (CLICK ONLY) */}
             {isMini && hasSubs && (
               <Popover
                 id={`mini-popover-${pathKey}`}
                 open={Boolean(miniAnchors[pathKey])}
                 anchorEl={miniAnchors[pathKey]}
-                onClose={() => scheduleClose(pathKey, 0)} // close on outside click / ESC
+                onClose={() => scheduleClose(pathKey, 0)}
                 anchorOrigin={{ vertical: "top", horizontal: "right" }}
                 transformOrigin={{ vertical: "top", horizontal: "left" }}
                 disableAutoFocus
@@ -519,15 +471,15 @@ export default function Layout() {
         );
       })}
     </List>
-  );
+  ), [isMini, location.pathname, miniAnchors, openSubmenus, renderIcon, scheduleClose, scheduleOpen, setMobileOpen, theme.transitions, toggleSubmenu]);
 
-  const drawer = (
+  const drawer = useMemo(() => (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", borderRadius: 0 }}>
       {drawerHeader}
       <Box sx={{ flex: 1, overflowY: "auto" }}>{drawerList}</Box>
-      <Box sx={{ p: 1.5 }}>{/* footer if needed */}</Box>
+      <Box sx={{ p: 1.5 }} />
     </Box>
-  );
+  ), [drawerHeader, drawerList]);
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -547,7 +499,6 @@ export default function Layout() {
         }}
       >
         <Toolbar sx={{ gap: 1 }}>
-          {/* Mobile hamburger */}
           <IconButton
             color="inherit"
             edge="start"
@@ -557,7 +508,6 @@ export default function Layout() {
             <MenuRounded />
           </IconButton>
 
-          {/* Desktop mini toggle */}
           <IconButton
             onClick={() => setIsMini((v) => !v)}
             sx={{ display: { xs: "none", md: "inline-flex" } }}
@@ -569,16 +519,7 @@ export default function Layout() {
 
           <Typography variant="h4" sx={{ flex: 1 }} />
           <Stack direction="row" spacing={1} alignItems="center">
-            <Box sx={{ pr: 3 }}>
-              <Badge badgeContent={4} sx={{
-                '& .MuiBadge-badge': {
-                  backgroundColor: '#ff756bff', // or your custom color
-                  color: '#fff',
-                },
-              }}>
-                <NotificationsIcon color="primary" />
-              </Badge>
-            </Box>
+            <NotificationMenu />
             <Box>
               <Typography variant="body2" sx={{ mr: 1 }}>
                 {user?.firstName} {user?.lastName}
@@ -622,9 +563,7 @@ export default function Layout() {
         </Toolbar>
       </AppBar>
 
-      {/* Side Drawer */}
       <Box component="nav" sx={{ width: { md: drawerWidthComputed }, flexShrink: { md: 0 } }} aria-label="menu">
-        {/* Mobile drawer (unchanged) */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -638,7 +577,6 @@ export default function Layout() {
           {drawer}
         </Drawer>
 
-        {/* Desktop drawer with mini-variant */}
         <Drawer
           variant="permanent"
           open
@@ -659,7 +597,6 @@ export default function Layout() {
         </Drawer>
       </Box>
 
-      {/* Main content */}
       <Box
         component="main"
         sx={{

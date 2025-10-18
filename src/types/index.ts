@@ -44,3 +44,14 @@ export interface User {
 export interface ThemeState {
   mode: 'light' | 'dark';
 }
+
+export type NotificationType = 'task' | 'approve' | 'reject' | 'info';
+
+export interface Notification {
+  id: number;
+  type: NotificationType;
+  text: string;
+  link: string;
+  unread: boolean;
+  createdAt: number;
+}
