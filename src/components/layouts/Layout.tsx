@@ -77,6 +77,31 @@ export default function Layout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- MODIFICATION START ---
+  // Helper to check if a submenu item is active
+  const isSubmenuActive = useCallback((item: any) => {
+    if (!Array.isArray(item.subMenus) || item.subMenus.length === 0) {
+      return false;
+    }
+    return item.subMenus.some(
+      (sub: any) =>
+        location.pathname === sub.path ||
+        location.pathname === sub.to ||
+        location.pathname.startsWith((sub.to || sub.path) + "/")
+    );
+  }, [location.pathname]);
+
+  // Determine active parent based on submenu activation
+  const activeParentPath = useMemo(() => {
+    for (const item of navItems) {
+      if (isSubmenuActive(item)) {
+        return item.path;
+      }
+    }
+    return null;
+  }, [navItems, isSubmenuActive]);
+  // --- MODIFICATION END ---
+
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>(
     () => {
       const init: Record<string, boolean> = {};
@@ -87,12 +112,7 @@ export default function Layout() {
           location.pathname.startsWith(item.path + "/");
         let shouldOpen = false;
         if (hasSub) {
-          shouldOpen = item.subMenus.some(
-            (sub: any) =>
-              location.pathname === sub.path ||
-              location.pathname === sub.to ||
-              location.pathname.startsWith((sub.to || sub.path) + "/")
-          );
+          shouldOpen = isSubmenuActive(item); // Use helper function
         }
         init[item.path] = shouldOpen || matchesSelf;
       }
@@ -102,11 +122,6 @@ export default function Layout() {
 
   const [miniAnchors, setMiniAnchors] = useState<Record<string, HTMLElement | null>>({});
   const [currentOpenPath, setCurrentOpenPath] = useState<string | null>(null);
-
-
-
-
-
 
   const clearTimer = useCallback((map: React.MutableRefObject<Record<string, number>>, key: string) => {
     if (map.current[key]) {
@@ -142,12 +157,7 @@ export default function Layout() {
       const hasSub = Array.isArray(item.subMenus) && item.subMenus.length > 0;
       let shouldOpen = false;
       if (hasSub) {
-        shouldOpen = item.subMenus.some(
-          (sub: any) =>
-            location.pathname === sub.path ||
-            location.pathname === sub.to ||
-            location.pathname.startsWith((sub.to || sub.path) + "/")
-        );
+        shouldOpen = isSubmenuActive(item); // Use helper function
       }
       const matchesSelf =
         location.pathname === item.path ||
@@ -160,7 +170,7 @@ export default function Layout() {
     setCurrentOpenPath(null);
     Object.keys(openTimers.current).forEach((k) => clearTimer(openTimers, k));
     Object.keys(closeTimers.current).forEach((k) => clearTimer(closeTimers, k));
-  }, [location.pathname, clearTimer]);
+  }, [location.pathname, clearTimer, isSubmenuActive]); // Add dependency
 
   const toggleSubmenu = useCallback((path: string) => {
     setOpenSubmenus((prev) => ({ ...prev, [path]: !prev[path] }));
@@ -244,8 +254,12 @@ export default function Layout() {
     <List sx={{ py: 1 }}>
       {navItems.map((item) => {
         const hasSubs = Array.isArray(item.subMenus) && item.subMenus.length > 0;
+        // --- MODIFICATION START ---
+        // Check if current main item is active either directly or via a submenu
         const isMainItemActive =
-          location.pathname === item.path;
+          location.pathname === item.path ||
+          activeParentPath === item.path;
+        // --- MODIFICATION END ---
 
         const pathKey = item.path;
 
@@ -289,7 +303,7 @@ export default function Layout() {
               }
             }}
             onKeyDown={onMiniKeyDown}
-            selected={!!isMainItemActive}
+            selected={!!isMainItemActive} // Use updated active state
             sx={{
               mx: 1.5,
               my: 0.5,
@@ -338,7 +352,7 @@ export default function Layout() {
                   <ListItemButton
                     component={hasSubs ? "div" : NavLink}
                     to={hasSubs ? undefined : item.path}
-                    selected={!!isMainItemActive}
+                    selected={!!isMainItemActive} // Use updated active state
                     onClick={(e: React.MouseEvent<HTMLAnchorElement | HTMLDivElement, MouseEvent>) => {
                       if (hasSubs) onMiniClick(e);
                       else setMobileOpen(false);
@@ -471,7 +485,7 @@ export default function Layout() {
         );
       })}
     </List>
-  ), [isMini, location.pathname, miniAnchors, openSubmenus, renderIcon, scheduleClose, scheduleOpen, setMobileOpen, theme.transitions, toggleSubmenu]);
+  ), [isMini, location.pathname, miniAnchors, openSubmenus, renderIcon, scheduleClose, scheduleOpen, setMobileOpen, theme.transitions, toggleSubmenu, activeParentPath]); // Add dependency
 
   const drawer = useMemo(() => (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column", borderRadius: 0 }}>
